@@ -262,11 +262,25 @@ def procesar_archivo_cxp(filepath):
 
 
 def main():
+    # Asegurar que el directorio de trabajo sea la carpeta del script o ejecutable
+    if getattr(sys, 'frozen', False):
+        script_dir = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Si se pasa un archivo como argumento (ej. al arrastrar y soltar un archivo sobre el .exe o .bat)
     if len(sys.argv) > 1:
         target_files = [sys.argv[1]]
     else:
-        # Busca archivos Excel en la carpeta
-        target_files = glob.glob("*.xlsx") + glob.glob("*.xlsm")
+        # Busca archivos Excel en la carpeta del script/ejecutable
+        excel_patterns = [
+            os.path.join(script_dir, "*.xlsx"),
+            os.path.join(script_dir, "*.xlsm")
+        ]
+        target_files = []
+        for pat in excel_patterns:
+            target_files.extend(glob.glob(pat))
+
         # Excluir temporales de Excel o copias de referencia/respaldo
         target_files = [
             f for f in target_files 
@@ -276,14 +290,25 @@ def main():
         ]
 
     if not target_files:
-        print("No se encontraron archivos Excel para procesar en esta carpeta.")
+        print(f"No se encontraron archivos Excel (.xlsx / .xlsm) para procesar en:\n{script_dir}")
+        if getattr(sys, 'frozen', False):
+            try:
+                input("\nPresione Enter para salir...")
+            except Exception:
+                pass
         return
 
     for f in target_files:
         procesar_archivo_cxp(f)
 
     print("\n¡Proceso terminado exitosamente para todos los archivos!")
+    if getattr(sys, 'frozen', False):
+        try:
+            input("\nPresione Enter para salir...")
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
     main()
+
